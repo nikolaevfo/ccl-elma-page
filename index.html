@@ -137,15 +137,167 @@
 
 .container-month-input {
   width: 300px;
-  height: 100px;
+  height: 50px;
+}
+
+/* week-input */
+
+/* -------------------------------------- пользовательские стили -------------------------------------- */
+
+.custom-week-input {
+  width: 100%;
+  padding: 10px 0 0;
+}
+
+.custom-week-input label {
+  font-size: 0.9em;
+  position: absolute;
+  top: 0;
+  padding: 0 5px;
+  background-color: white;
+  margin-left: 5px;
+  color: #8d8d8d;
+}
+
+.custom-week-input input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  height: 100%;
+  cursor: pointer;
+}
+
+.custom-week-input input:focus {
+  outline: 1px solid #bdbdbd;
+}
+
+.custom-week-input__wrapper {
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  background-color: white;
+}
+
+.custom-week-input__year-group {
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  margin: 3px;
+  background-color: white;
+}
+
+.custom-week-input__year-group:hover {
+  background-color: #e2f1ff;
+}
+
+.custom-week-input__current-year {
+  background-color: #e2f1ff;
+}
+
+.custom-week-input__current-year > ul {
+  background-color: #cae6ff33;
+}
+
+.custom-week-input__current-year ul li {
+  font-size: 0.8em;
+  padding: 3px;
+  cursor: pointer;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  margin: 3px;
+  background-color: white;
+}
+
+.custom-week-input__current-year div {
+  padding: 0 17px;
+}
+
+.custom-week-input__current-year ul li li {
+  font-size: 1em;
+  padding: 3px;
+}
+
+.custom-week-input__current-year ul li:hover {
+  background-color: #e2f1ff;
+}
+
+.custom-week-input__current-week {
+  background-color: #e2f1ff !important;
+}
+
+.custom-week-input__current-week > ul {
+  background-color: #cae6ff33;
+}
+
+/* ------------------------ позиционирование, дефолтные стили, НЕ МЕНЯТЬ --------------------------*/
+
+.custom-week-input {
+  position: relative;
+}
+
+.custom-week-input__wrapper {
+  height: 200px;
+  overflow-y: scroll;
+  background-color: white;
+  z-index: 10;
+  position: absolute;
+  width: 100%;
+  box-sizing: border-box;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.custom-week-input__wrapper > ul {
+  margin: 0;
+  list-style: none;
+  display: block;
+  padding: 0;
+}
+
+.custom-week-input__wrapper::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.custom-week-input__year-group ul {
+  display: none;
+}
+
+.custom-week-input__current-year > ul {
+  margin: 0;
+  list-style: none;
+  display: block;
+  padding: 0;
+}
+
+.custom-week-input__current-month > ul {
+  margin: 0;
+  list-style: none;
+  display: block;
+  padding: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.container-week-input {
+  width: 300px;
+  height: 50px;
 }</style>
 
 <!-- область html -->
 
 <body>
-    <!-- month-input -->
-    <h2>input-month</h2>
+    <!-- input-month -->
     <div class="container-month-input"></div>
+    <br>
+
+    <!-- input-week -->
+    <h2>input-week</h2>
+    <div class="container-week-input"></div>
     <br>
 </body>
 
@@ -295,7 +447,217 @@
     }
   }
 
-  // month-input
+  class InputWeek {
+    constructor() {
+      [this._labelText, this._placeholder, this._onWeekSelect,
+      // функция, которая отработает на выбор месяца, получит в аргументы первый и последний день выбранной недели
+      this._inputDate // дефолтное значение инпута
+      ] = arguments;
+      this._calendar = undefined;
+      this._input = undefined;
+      this.yearsBefore = 5;
+      this.yearsAfter = 1;
+      this.inputValue = {
+        weekStart: undefined,
+        weekEnd: undefined,
+        weekNum: undefined,
+        text: ''
+      };
+      this._MONTHS = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ', 'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'];
+      if (this._inputDate) {
+        this._setInputValue(this._inputDate);
+      }
+    }
+    render(container) {
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('custom-week-input');
+      let inputID = 'week-input_' + (Math.random() * 100000).toFixed();
+      while (document.getElementById(inputID)) {
+        inputID = 'week-input_' + (Math.random() * 100000).toFixed();
+      }
+      const label = document.createElement('label');
+      label.textContent = this._labelText;
+      label.setAttribute('for', inputID);
+      wrapper.appendChild(label);
+      const input = document.createElement('input');
+      this._input = input;
+      input.setAttribute('type', 'text');
+      input.setAttribute('placeholder', this._placeholder);
+      input.setAttribute('id', inputID);
+      input.setAttribute('readonly', true);
+      wrapper.appendChild(input);
+      container.prepend(wrapper);
+      input.addEventListener('click', () => {
+        this._showCalendar();
+      });
+
+      // обработка клика не по инпуту
+      let isInputClick = false;
+      wrapper.addEventListener('click', () => isInputClick = true);
+      document.addEventListener('click', () => {
+        if (!isInputClick) {
+          this._hideCalendar();
+        }
+        isInputClick = false;
+      });
+      this._createWeekCalendar();
+      this._input.value = this.inputValue.text;
+    }
+    _getWeekValue(date) {
+      const currentDate = date ? new Date(date.getFullYear(), date.getMonth(), date.getDate()) : new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      currentDate.setDate(currentDate.getDate() + 3 - (currentDate.getDay() + 6) % 7);
+      var week = new Date(currentDate.getFullYear(), 0, 4);
+      let weekNum = 1 + Math.round(((currentDate.getTime() - week.getTime()) / 86400000 - 3 + (week.getDay() + 6) % 7) / 7);
+      const isMonday = date => date.getDay() === 1;
+      const isSunday = date => date.getDay() === 0;
+      let monday = currentDate;
+      while (!isMonday(monday)) {
+        monday = this._subtractDay(monday);
+      }
+      let sunday = currentDate;
+      while (!isSunday(sunday)) {
+        sunday = this._addDay(sunday);
+      }
+      const getDateFormat = date => {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0' + (date.getMonth() + 1);
+        const day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate();
+        return [day, month, year].join('.');
+      };
+      let weekValue = [getDateFormat(monday), getDateFormat(sunday)].join(' - ') + ' (' + weekNum + ')';
+      return {
+        weekValue,
+        monday,
+        sunday,
+        weekNum
+      };
+    }
+    _subtractDay(date) {
+      const dayMilliseconds = 24 * 60 * 60 * 1000;
+      date.setTime(date.getTime() - dayMilliseconds);
+      const dateCopy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return dateCopy;
+    }
+    _addDay(date) {
+      const dayMilliseconds = 24 * 60 * 60 * 1000;
+      date.setTime(date.getTime() + dayMilliseconds);
+      const dateCopy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return dateCopy;
+    }
+    _setInputValue(date) {
+      const weekValue = this._getWeekValue(date);
+      this.inputValue.weekStart = weekValue.monday;
+      this.inputValue.weekEnd = weekValue.sunday;
+      this.inputValue.weekNum = weekValue.weekNum;
+      this.inputValue.text = weekValue.weekValue;
+    }
+    _createWeekCalendar() {
+      const calendarWrapper = document.createElement('div');
+      this._calendar = calendarWrapper;
+      calendarWrapper.classList.add('custom-week-input__wrapper');
+      this._hideCalendar();
+      this._input.after(calendarWrapper);
+      const calendar = document.createElement('ul');
+      calendarWrapper.appendChild(calendar);
+      const calendarStart = new Date().getFullYear() - this.yearsBefore;
+      const calendarEnd = new Date().getFullYear() + this.yearsAfter;
+      for (let currentYear = calendarStart; currentYear <= calendarEnd; currentYear++) {
+        this._createYear(calendar, currentYear);
+      }
+    }
+    _createYear(calendar, currentYear) {
+      const year = document.createElement('li');
+      year.classList.add('custom-week-input__year-group');
+      calendar.appendChild(year);
+      const yearText = document.createElement('div');
+      year.appendChild(yearText);
+      yearText.classList.add('custom-week-input__year');
+      yearText.textContent = currentYear;
+      yearText.addEventListener('click', () => {
+        if (this._calendar) {
+          const currentYears = Array.from(this._calendar.querySelectorAll('.custom-week-input__current-year'));
+          currentYears.forEach(currentYear => currentYear.classList.remove('custom-week-input__current-year'));
+          year.classList.add('custom-week-input__current-year');
+        }
+      });
+      const monthsList = document.createElement('ul');
+      year.appendChild(monthsList);
+      this._MONTHS.forEach((monthName, monthI) => {
+        this._createMonth(monthsList, currentYear, year, monthName, monthI);
+      });
+    }
+    _createMonth(monthsList, currentYear, year, monthName, monthI) {
+      const month = document.createElement('li');
+      monthsList.appendChild(month);
+      month.addEventListener('click', async () => {
+        Array.from(document.querySelectorAll('.custom-week-input__current-month')).forEach(curMonth => curMonth.classList.remove('custom-week-input__current-month'));
+        month.classList.add('custom-week-input__current-month');
+      });
+      const monthText = document.createElement('div');
+      monthText.textContent = [currentYear, monthName].join(' ');
+      month.appendChild(monthText);
+      let lastDay = new Date(currentYear, monthI + 1, 0);
+      const weeksList = document.createElement('ul');
+      month.appendChild(weeksList);
+      let currentWeekNum = 0;
+      for (let i = 0; i < lastDay.getDate() + 1; i++) {
+        const weekDate = new Date(currentYear, monthI, i + 1);
+        const weekNum = this._getWeekValue(weekDate).weekNum;
+        if (currentWeekNum !== weekNum) {
+          currentWeekNum = weekNum;
+          this._createWeek(weekDate, weekNum, weeksList, currentYear, year, month);
+        }
+      }
+    }
+    _createWeek(weekDate, weekNum, weeksList, currentYear, year, month) {
+      const weekValue = this._getWeekValue(weekDate);
+      const week = document.createElement('li');
+      week.textContent = weekValue.weekValue;
+      weeksList.appendChild(week);
+      week.addEventListener('click', async () => {
+        this._setInputValue(weekDate);
+        this._hideCalendar();
+        const day = 2 + (weekNum - 1) * 7;
+        const firstDay = new Date(currentYear, 0, day);
+        const lastDay = new Date(currentYear, 0, day + 6);
+        this._onWeekSelect(firstDay, lastDay);
+        this._input.value = this.inputValue.text;
+        this._setActiveStyle(year, month, week);
+      });
+      const monthI = weekDate.getMonth();
+      if (weekNum === this.inputValue.weekNum && monthI === +this.inputValue.weekEnd.getMonth() && currentYear === +this.inputValue.weekEnd.getFullYear()) {
+        this._setActiveStyle(year, month, week);
+      }
+    }
+    _setActiveStyle(currentYear, currentMonth, currentWeek) {
+      // удаляем активные стили
+      const year = this._calendar.querySelector('.custom-week-input__current-year');
+      if (year) year.classList.remove('custom-week-input__current-year');
+      const month = this._calendar.querySelector('.custom-week-input__current-month');
+      if (month) month.classList.remove('custom-week-input__current-month');
+      const week = this._calendar.querySelector('.custom-week-input__current-week');
+      if (week) week.classList.remove('custom-week-input__current-week');
+
+      // присваиваем новые
+      currentYear.classList.add('custom-week-input__current-year');
+      currentMonth.classList.add('custom-week-input__current-month');
+      currentWeek.classList.add('custom-week-input__current-week');
+    }
+    _showCalendar() {
+      if (this._calendar && this._calendar.classList.contains('hidden')) {
+        this._calendar.classList.remove('hidden');
+        this._calendar.scrollTo(0, this._calendar.querySelector('.custom-week-input__current-month').offsetTop - 10);
+      }
+    }
+    _hideCalendar() {
+      if (this._calendar && !this._calendar.classList.contains('hidden')) {
+        this._calendar.classList.add('hidden');
+      }
+    }
+  }
+
+  // ================================================================ INPUT-MONTH =========================================================================================
 
   const monthInputData = new InputMonth(
   // label
@@ -307,7 +669,7 @@
   // дефолтное значение инпута при ините в формате Date
   new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
 
-  // настраиваем количество отображаемых годов
+  // настраиваем количество отображаемых лет
   monthInputData.yearsBefore = 10;
   monthInputData.yearsAfter = 10;
   function logCheckedMonthDays(firstDay, lastDay) {
@@ -317,8 +679,37 @@
     });
   }
 
+  // получаем значение инпута
+  console.log(monthInputData.inputValue);
+
   // вызываем функцию render, которая вставит инпут в переданный элемент
   monthInputData.render(document.querySelector('.container-month-input'));
+
+  const inputWeekData = new InputWeek(
+  // label
+  'Неделя',
+  // placeholder
+  'Выберите неделю',
+  // функция, которая будет вызвана при выборе недели, принимает два аргумента - первый и последний день выбранного периода в формате Date
+  logCheckedWeekDays,
+  // дефолтное значение инпута при ините в формате Date
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 7));
+
+  // настраиваем количество отображаемых лет
+  inputWeekData.yearsBefore = 10;
+  inputWeekData.yearsAfter = 10;
+  function logCheckedWeekDays(firstDay, lastDay) {
+    console.log({
+      firstDay,
+      lastDay
+    });
+  }
+
+  // получаем значение инпута
+  console.log(inputWeekData.inputValue);
+
+  // вызываем функцию render, которая вставит инпут в переданный элемент
+  inputWeekData.render(document.querySelector('.container-week-input'));
 
 })));
 </script>
