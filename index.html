@@ -1,0 +1,324 @@
+<!-- подключение стилей -->
+<style>/* month-input */
+
+/* -------------------------------------- пользовательские стили -------------------------------------- */
+
+.custom-month-input {
+  width: 100%;
+  padding: 10px 0 0;
+}
+
+.custom-month-input label {
+  font-size: 0.9em;
+  position: absolute;
+  top: 0;
+  padding: 0 5px;
+  background-color: white;
+  margin-left: 5px;
+  color: #8d8d8d;
+}
+
+.custom-month-input input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  height: 100%;
+  cursor: pointer;
+}
+
+.custom-month-input input:focus {
+  outline: 1px solid #bdbdbd;
+}
+
+.custom-month-input__wrapper {
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  background-color: white;
+}
+
+.custom-month-input__year-group {
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  margin: 3px;
+  background-color: white;
+}
+
+.custom-month-input__year-group:hover {
+  background-color: #e2f1ff;
+}
+
+.custom-month-input__current-year {
+  background-color: #e2f1ff;
+}
+
+.custom-month-input__current-year > ul {
+  background-color: #cae6ff33;
+}
+
+.custom-month-input__current-year ul li {
+  font-size: 0.8em;
+  padding: 3px 20px;
+  cursor: pointer;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  margin: 3px;
+  background-color: white;
+}
+
+.custom-month-input__current-year ul li li {
+  font-size: 1em;
+  padding: 3px;
+}
+
+.custom-month-input__current-year ul li:hover {
+  background-color: #e2f1ff;
+}
+
+.custom-month-input__current-month {
+  background-color: #e2f1ff !important;
+}
+
+.custom-month-input__current-month > ul {
+  background-color: #cae6ff33;
+}
+
+.custom-month-input__current-week {
+  background-color: #cae6ff33 !important;
+}
+
+/* ------------------------ позиционирование, дефолтные стили, НЕ МЕНЯТЬ --------------------------*/
+
+.custom-month-input {
+  position: relative;
+}
+
+.custom-month-input__wrapper {
+  height: 200px;
+  overflow-y: scroll;
+  background-color: white;
+  z-index: 10;
+  position: absolute;
+  width: 100%;
+  box-sizing: border-box;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.custom-month-input__wrapper > ul {
+  margin: 0;
+  list-style: none;
+  display: block;
+  padding: 0;
+}
+
+.custom-month-input__wrapper::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.custom-month-input__year-group ul {
+  display: none;
+}
+
+.custom-month-input__current-year > ul {
+  margin: 0;
+  list-style: none;
+  display: block;
+  padding: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.container-month-input {
+  width: 300px;
+  height: 100px;
+}</style>
+
+<!-- область html -->
+
+<body>
+    <!-- month-input -->
+    <h2>input-month</h2>
+    <div class="container-month-input"></div>
+    <br>
+</body>
+
+<!-- подключение скриптов -->
+<script>(function (factory) {
+  typeof define === 'function' && define.amd ? define('index', factory) :
+  factory();
+}((function () { 'use strict';
+
+  class InputMonth {
+    constructor() {
+      [this._labelText, this._placeholder, this._onMonthSelect,
+      // функция, которая отработает на выбор месяца, получит в аргументы первый и последний день выбранного меясяца
+      this._inputDate // дефолтное значение инпута
+      ] = arguments;
+      this._calendar = undefined;
+      this._input = undefined;
+      this.yearsBefore = 5;
+      this.yearsAfter = 1;
+      this.inputValue = {
+        year: undefined,
+        month: undefined,
+        text: ''
+      };
+      this._MONTHS = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ', 'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'];
+      if (this._inputDate) {
+        this._setInputValue(this._inputDate);
+      }
+    }
+    render(container) {
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('custom-month-input');
+      let inputID = 'month-input_' + (Math.random() * 100000).toFixed();
+      while (document.getElementById(inputID)) {
+        inputID = 'month-input_' + (Math.random() * 100000).toFixed();
+      }
+      const label = document.createElement('label');
+      label.textContent = this._labelText;
+      label.setAttribute('for', inputID);
+      wrapper.appendChild(label);
+      const input = document.createElement('input');
+      this._input = input;
+      input.setAttribute('type', 'text');
+      input.setAttribute('placeholder', this._placeholder);
+      input.setAttribute('id', inputID);
+      input.setAttribute('readonly', true);
+      wrapper.appendChild(input);
+      container.prepend(wrapper);
+      input.addEventListener('click', () => {
+        this._showCalendar();
+      });
+
+      // обработка клика не по инпуту
+      let isInputClick = false;
+      wrapper.addEventListener('click', () => isInputClick = true);
+      document.addEventListener('click', () => {
+        if (!isInputClick) {
+          this._hideCalendar();
+        }
+        isInputClick = false;
+      });
+      this._createMonthCalendar();
+      this._input.value = this.inputValue.text;
+    }
+    _setInputValue(date) {
+      const currentDate = date || new Date();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthName = this._MONTHS[month];
+      let text = monthName.toLowerCase();
+      text = text.replace(text[0], text[0].toUpperCase());
+      this.inputValue.year = year;
+      this.inputValue.month = month;
+      this.inputValue.text = [text, year].join(' ');
+    }
+    _createMonthCalendar() {
+      const calendarWrapper = document.createElement('div');
+      this._calendar = calendarWrapper;
+      calendarWrapper.classList.add('custom-month-input__wrapper');
+      this._hideCalendar();
+      this._input.after(calendarWrapper);
+      const calendar = document.createElement('ul');
+      calendarWrapper.appendChild(calendar);
+      const calendarStart = new Date().getFullYear() - this.yearsBefore;
+      const calendarEnd = new Date().getFullYear() + this.yearsAfter;
+      for (let currentYear = calendarStart; currentYear <= calendarEnd; currentYear++) {
+        this._createYear(calendar, currentYear);
+      }
+    }
+    _createYear(calendar, currentYear) {
+      const year = document.createElement('li');
+      year.classList.add('custom-month-input__year-group');
+      calendar.appendChild(year);
+      const yearText = document.createElement('div');
+      year.appendChild(yearText);
+      yearText.classList.add('custom-month-input__year');
+      yearText.textContent = currentYear;
+      yearText.addEventListener('click', () => {
+        if (this._calendar) {
+          const currentYears = Array.from(this._calendar.querySelectorAll('.custom-month-input__current-year'));
+          currentYears.forEach(currentYear => currentYear.classList.remove('custom-month-input__current-year'));
+          year.classList.add('custom-month-input__current-year');
+        }
+      });
+      const monthsList = document.createElement('ul');
+      year.appendChild(monthsList);
+      this._MONTHS.forEach((monthName, monthI) => this._createMonth(monthsList, currentYear, year, monthName, monthI));
+    }
+    _createMonth(monthsList, currentYear, year, monthName, monthI) {
+      const month = document.createElement('li');
+      month.textContent = [currentYear, monthName].join(' ');
+      monthsList.appendChild(month);
+      month.addEventListener('click', async () => {
+        this._setInputValue(new Date(currentYear, monthI, 1));
+        this._hideCalendar();
+        const firstDay = new Date(currentYear, monthI, 1);
+        const lastDay = new Date(currentYear, monthI + 1, 0);
+        this._onMonthSelect(firstDay, lastDay);
+        this._setActiveStyle(year, month);
+        this._input.value = this.inputValue.text;
+      });
+      if (monthI === this.inputValue.month && currentYear === this.inputValue.year) {
+        this._setActiveStyle(year, month);
+      }
+    }
+    _setActiveStyle(currentYear, currentMonth) {
+      // удаляем активные стили
+      const year = this._calendar.querySelector('.custom-month-input__current-year');
+      if (year) year.classList.remove('custom-month-input__current-year');
+      const month = this._calendar.querySelector('.custom-month-input__current-month');
+      if (month) month.classList.remove('custom-month-input__current-month');
+
+      // присваиваем новые
+      currentYear.classList.add('custom-month-input__current-year');
+      currentMonth.classList.add('custom-month-input__current-month');
+    }
+    _showCalendar() {
+      if (this._calendar && this._calendar.classList.contains('hidden')) {
+        this._calendar.classList.remove('hidden');
+        this._calendar.scrollTo(0, this._calendar.querySelector('.custom-month-input__current-month').offsetTop - 10);
+      }
+    }
+    _hideCalendar() {
+      if (this._calendar && !this._calendar.classList.contains('hidden')) {
+        this._calendar.classList.add('hidden');
+      }
+    }
+  }
+
+  // month-input
+
+  const monthInputData = new InputMonth(
+  // label
+  'Месяц',
+  // placeholder
+  'Выберите месяц',
+  // функция, которая будет вызвана при выборе месяца, принимает два аргумента - первый и последний день выбранного периода в формате Date
+  logCheckedMonthDays,
+  // дефолтное значение инпута при ините в формате Date
+  new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
+
+  // настраиваем количество отображаемых годов
+  monthInputData.yearsBefore = 10;
+  monthInputData.yearsAfter = 10;
+  function logCheckedMonthDays(firstDay, lastDay) {
+    console.log({
+      firstDay,
+      lastDay
+    });
+  }
+
+  // вызываем функцию render, которая вставит инпут в переданный элемент
+  monthInputData.render(document.querySelector('.container-month-input'));
+
+})));
+</script>
