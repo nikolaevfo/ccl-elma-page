@@ -286,20 +286,104 @@
 .container-week-input {
   width: 300px;
   height: 50px;
+}
+
+/* tabs-variant-1*/
+
+.castom-tabs {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.castom-tabs__nav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 1px solid #D9D9D9;
+  padding-left: 16px;
+}
+
+.castom-tabs__btn {
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 16.94px;
+  color: #5081E5;
+  padding: 2px 6px;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+}
+
+.castom-tabs__btn--active {
+  border-left: 1px solid #D9D9D9;
+  border-right: 1px solid #D9D9D9;
+  border-top: 1px solid #D9D9D9;
+  color: #000000;
+}
+
+.castom-tabs__btn--active::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background-color: #fff;
+  left: 0;
+  top: 100%;
+}
+
+.castom-tabs__content-wrapper {
+  width: 100%;
+}
+
+.castom-tabs__content-item {
+  display: none;
+}
+
+.castom-tabs__content-item--show {
+  display: block;
+}
+
+.tabs-wrapper {
+  max-width: 1440px;
+}
+
+.tabs-one {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+}
+
+.tabs-two {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+}
+
+@media (max-width:768px) {
+  .castom-tabs__btn {
+    font-size: 16px;
+  }
 }</style>
 
 <!-- область html -->
 
 <body>
-    <!-- input-month -->
-    <h2>input-month</h2>
-    <div class="container-month-input"></div>
-    <br>
+  <!-- input-month -->
+  <h2>input-month</h2>
+  <div class="container-month-input"></div>
+  <br />
 
-    <!-- input-week -->
-    <h2>input-week</h2>
-    <div class="container-week-input"></div>
-    <br>
+  <!-- input-week -->
+  <h2>input-week</h2>
+  <div class="container-week-input"></div>
+  <br />
+
+  <!-- tabs_variant_1 -->
+  <h2>tabs-variant-1</h2>
+  <div class="tabs-wrapper"></div>
 </body>
 
 <!-- подключение скриптов -->
@@ -658,6 +742,72 @@
     }
   }
 
+  class Tabs {
+    constructor(props) {
+      this.props = props;
+    }
+    init() {
+      try {
+        if (!this.props || !this.props.parentForInit || !this.props.tabs || !this.props.tabs.lenght === 0) {
+          throw Error('Во конструктор вкладок не переданы параметры или переданы неверно');
+        }
+        this.tabs = document.createElement('div');
+        this.tabs.classList.add('castom-tabs');
+        this.props.parentForInit.append(this.tabs);
+        const tabsNav = document.createElement('nav');
+        tabsNav.classList.add('castom-tabs__nav');
+        const tabsContentWrapper = document.createElement('div');
+        tabsContentWrapper.classList.add('castom-tabs__content-wrapper');
+        this.tabs.append(tabsNav);
+        this.tabs.append(tabsContentWrapper);
+        this.props.tabs.forEach((tab, idx) => {
+          const buttonName = Object.keys(tab)[0]; // название вкладки
+          const selectorContent = tab[buttonName]; // селектор обертки для контента
+
+          this.button = document.createElement('button');
+          this.button.setAttribute('data-index', idx);
+          this.button.classList.add('castom-tabs__btn');
+          this.button.type = 'button';
+          this.button.textContent = buttonName;
+          this.contentItem = document.createElement('div');
+          this.contentItem.classList.add('castom-tabs__content-item');
+          if (idx === 0) {
+            this.button.classList.add('castom-tabs__btn--active');
+            this.contentItem.classList.add('castom-tabs__content-item--show');
+          }
+          this.content = document.createElement('div');
+          this.content.classList.add(selectorContent);
+          this.contentItem.append(this.content);
+          tabsNav.append(this.button);
+          tabsContentWrapper.append(this.contentItem);
+        });
+        this.handlers();
+      } catch (error) {
+        console.log(error);
+        return;
+      }
+    }
+    handlers() {
+      this.btnTabs = this.tabs.querySelectorAll('.castom-tabs__btn');
+      this.content = this.tabs.querySelectorAll('.castom-tabs__content-item');
+      this.tabs.addEventListener('click', e => {
+        if (e.target.closest('.castom-tabs__btn')) {
+          this.btnTabs.forEach(btn => {
+            btn.classList.remove('castom-tabs__btn--active');
+          });
+          e.target.classList.add('castom-tabs__btn--active');
+          const targetButtonIdx = e.target.dataset.index; // получаем индекс index кнопки по data - атрибуту
+
+          this.content.forEach(content => {
+            content.classList.remove('castom-tabs__content-item--show'); // удаляем у всего контента класс show
+          });
+
+          this.content[targetButtonIdx].classList.add('castom-tabs__content-item--show'); // добавляем класс show контенту с таким же индексом как кнопка
+        }
+      });
+    }
+  }
+
   // ================================================================ INPUT-MONTH =========================================================================================
 
   const monthInputData = new InputMonth(
@@ -711,6 +861,35 @@
 
   // вызываем функцию render, которая вставит инпут в переданный элемент
   inputWeekData.render(document.querySelector('.container-week-input'));
+
+  const parentForInitTabs = document.querySelector('.tabs-wrapper'); // обертка для инициализации вкладок
+
+  // создаем обьект со свойствами для экземляра класса Tabs
+  const propsForTabsTest = {
+    parentForInit: parentForInitTabs,
+    // обертка для вкладок
+    tabs: [{
+      Вкладка_1: 'tabs-one'
+    }, {
+      Вкладка_2: 'tabs-two'
+    }] // массив обьектов типа Название вкладки: 'обертка для контента'
+  };
+
+  const tabs = new Tabs(propsForTabsTest); // создаем новый экземпляр класса вкладки
+  tabs.init(); // метод init отрисовывает вкладки в обертку для вкладок переданную в propsForTabsTest
+
+  function renderContentTabs() {
+    const tabsOneWrapper = document.querySelector('.tabs-one'); // обертка контента 1 вкладки
+    const tabsTwoWrapper = document.querySelector('.tabs-two'); // обертка контента 2 вкладки
+
+    const contentOne = document.createElement('h2');
+    contentOne.textContent = '1';
+    const contentTwo = document.createElement('h2');
+    contentTwo.textContent = '2';
+    tabsOneWrapper.append(contentOne);
+    tabsTwoWrapper.append(contentTwo);
+  }
+  renderContentTabs(); // вызов функции рендера контента во вкладки
 
 })));
 </script>
